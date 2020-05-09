@@ -10,7 +10,7 @@ The two classes `channel_lite_writer` and `channel_lite_reader` fix the Tangle a
 
 # How It Works
 
-Use `channel.open()` to open the channel and get the announcement verifier <br />s
+Use `channel.open()` to open the channel and get the announcement verifier <br />
 Use `channel.write_signed()` to write signed a message(public or masked) into the channel <br />
 Use `channel.write_tagged()` to write tagged a message(public or masked) into the channel <br />
 <br />
