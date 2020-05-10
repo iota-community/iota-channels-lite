@@ -36,7 +36,7 @@ impl Channel {
         }
     }
 
-    pub async fn connect(&mut self) -> Fallible<()>{
+    pub async fn connect(&mut self) -> Result<String,&str>{
 
         println!("Receiving announcement messages");
      
@@ -55,7 +55,7 @@ impl Channel {
                 None => println!("Invalid message"),
                 Some(header) => {
                     if header.check_content_type(message::announce::TYPE){
-                        self.subscriber.unwrap_announcement(header.clone())?;
+                        self.subscriber.unwrap_announcement(header.clone()).unwrap();
                         println!("Found and verified {} message", header.content_type());
                         found_valid_msg = true;
                         break;
@@ -79,7 +79,7 @@ impl Channel {
         }else{
             println!("No valid announce message found");
         }
-        Ok(())
+        Ok(self.subscription_link.msgid.to_string())
     }
 
     pub async fn disconnect(&mut self) -> Result<String,&str>{
@@ -164,7 +164,7 @@ impl Channel {
                                 Ok((unwrapped_public, unwrapped_masked)) => {
                                     response.push((unwrapped_public.to_string(),unwrapped_masked.to_string()));
                                 }
-                                Err(e) => println!("Signed Packet Error: {}", e),
+                                Err(e) => println!("Tagged Packet Error: {}", e),
                             }
                             continue;
                         }
@@ -177,5 +177,46 @@ impl Channel {
         }
 
         Ok(response)
+    }
+
+    pub async fn update_keyload(&mut self, keyload_tag:String) -> Fallible<()>{
+
+        let keyload_link = Address::from_str(&self.channel_address, &keyload_tag).unwrap();
+
+        if self.is_connected {
+
+            let message_list = async_messaging::recv_messages(&mut self.client, &keyload_link).await.unwrap();
+
+            for tx in message_list.iter() {
+                let header_opt = match tx.parse_header(){
+                    Ok(val) => Some(val),
+                    Err(e) => {
+                        println!("Parsing Error Header: {}", e);
+                        None
+                    }
+                };
+                match header_opt {
+                    None => println!("Invalid message"),
+                    Some(header) => {
+
+                        if header.check_content_type(message::keyload::TYPE) {
+                            match self.subscriber.unwrap_keyload(header.clone()) {
+                                Ok(_) => {
+                                    println!("Updated keyload!");
+                                    break;
+                                }
+                                Err(e) => println!("Tagged Packet Error: {}", e),
+                            }
+                            continue;
+                        }
+                    }
+                }
+            }
+
+        }else {
+            println!("Channel not connected");
+        }
+
+        Ok(())
     }
 }

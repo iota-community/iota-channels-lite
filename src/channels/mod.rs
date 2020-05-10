@@ -1,2 +1,2 @@
-pub mod channel_writer;
-pub mod channel_reader;
+pub mod channel_author;
+pub mod channel_subscriber;

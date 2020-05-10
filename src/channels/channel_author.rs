@@ -58,13 +58,49 @@ impl Channel {
 
         self.announcement_link = Address::from_str(&announcement_address, &announcement_tag).unwrap();
 
+        Ok((self.channel_address.clone(), announcement_tag))
+    }
+
+    pub async fn add_subscriber(&mut self, subscribe_tag: String) -> Result<String,&str>{
+
+        let subscribe_link = Address::from_str(&self.channel_address, &subscribe_tag).unwrap();
+
+        let message_list = async_messaging::recv_messages(&mut self.client, &subscribe_link).await.unwrap();
+    
+        for tx in message_list.iter() {
+            let header_opt = match tx.parse_header(){
+                Ok(val) => Some(val),
+                Err(e) => {
+                    println!("Parsing Error Header: {}", e);
+                    None
+                }
+            };
+            match header_opt {
+                None => println!("Invalid message"),
+                Some(header) => {
+
+                    if header.check_content_type(message::subscribe::TYPE) {
+                        match self.author.unwrap_subscribe(header.clone()) {
+                            Ok(_) => {
+                                println!("Subscribtion successfull"); 
+                                break;
+                            },
+                            Err(e) => println!("Subscribe Packet Error: {}", e),
+                        }
+                        continue;
+                    }
+                }
+            }
+        }
+
         self.keyload_link = {
             let msg = self.author.share_keyload_for_everyone(&self.announcement_link).unwrap();
             async_messaging::send_message(&mut self.client, &msg).await.unwrap();
             msg.link
         };
 
-        Ok((self.channel_address.clone(), announcement_tag))
+        Ok(self.keyload_link.msgid.to_string())
+
     }
 
     pub async fn write_signed(&mut self, public_payload: &str, private_payload: &str)-> Result<String, &str>{
@@ -98,7 +134,7 @@ impl Channel {
 
     }
 
-    pub async fn read_disconnect(&mut self, unsubscribe_tag: String) -> Fallible<()>{
+    pub async fn remove_subscriber(&mut self, unsubscribe_tag: String) -> Fallible<()>{
 
         let unsubscribe_link = Address::from_str(&self.channel_address, &unsubscribe_tag).unwrap();
 
@@ -118,7 +154,10 @@ impl Channel {
 
                     if header.check_content_type(message::unsubscribe::TYPE) {
                         match self.author.unwrap_unsubscribe(header.clone()) {
-                            Ok(_) => println!("Unsubscribtion successfull"),
+                            Ok(_) => {
+                                println!("Unsubscribtion successfull");
+                                break;
+                            },
                             Err(e) => println!("Unsubscribe Packet Error: {}", e),
                         }
                         continue;
@@ -129,8 +168,4 @@ impl Channel {
         Ok(())
     }
 
-    pub fn remove_subscriber() -> Fallible<()>{
-        //TODO
-        Ok(())
-    }
 }
