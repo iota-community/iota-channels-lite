@@ -14,7 +14,7 @@ Use `channel_author.open()` to open the channel and get the announcement verifie
 Use `channel_author.add_subscriber()` to add a subscriber to the channel <br />
 Use `channel_author.write_signed()` to write a signed message(public or masked) into the channel <br />
 Use `channel_author.write_tagged()` to write a tagged message(public or masked) into the channel <br />
-Use `channel_author.remove_subscribers()` to remove a subscriber from the channel <br />
+Use `channel_author.remove_subscriber()` to remove a subscriber from the channel <br />
 <br />
 Use `channel_subscriber.connect()` to connect to a channel<br />
 Use `channel_subscriber.update_keyload()` to update the session key<br />
