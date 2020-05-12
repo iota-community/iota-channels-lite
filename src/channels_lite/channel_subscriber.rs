@@ -37,8 +37,6 @@ impl Channel {
     }
 
     pub async fn connect(&mut self) -> Result<String,&str>{
-
-        println!("Receiving announcement messages");
      
         let message_list = async_messaging::recv_messages(&mut self.client, &self.announcement_link).await.unwrap();
 
@@ -56,7 +54,6 @@ impl Channel {
                 Some(header) => {
                     if header.check_content_type(message::announce::TYPE){
                         self.subscriber.unwrap_announcement(header.clone()).unwrap();
-                        println!("Found and verified {} message", header.content_type());
                         found_valid_msg = true;
                         break;
                     }
@@ -65,12 +62,10 @@ impl Channel {
         }
         
         if found_valid_msg {
-            println!("Subscribing to channel");
         
             let subscribe_link = {
                 let msg = self.subscriber.subscribe(&self.announcement_link).unwrap();
                 async_messaging::send_message(&mut self.client, &msg).await.unwrap();
-                println!("Subscribed to the channel");
                 msg.link.clone()
             };
 
@@ -89,14 +84,11 @@ impl Channel {
             async_messaging::send_message(&mut self.client, &msg).await.unwrap();
             msg.link.msgid
         };
-        println!("Unsubscribed from channel");
         
         Ok(unsubscribe_link.to_string())
     }
 
     pub async fn read_signed(&mut self) -> Result<Vec<(String,String)>,&str>{
-
-        println!("Receiving signed messages");
 
         let mut response:Vec<(String,String)> = Vec::new();
     
@@ -138,8 +130,6 @@ impl Channel {
 
 
     pub async fn read_tagged(&mut self) -> Result<Vec<(String,String)>,&str>{
-        
-        println!("Receiving tagged messages");
 
         let mut response:Vec<(String,String)> = Vec::new();
     
@@ -202,7 +192,6 @@ impl Channel {
                         if header.check_content_type(message::keyload::TYPE) {
                             match self.subscriber.unwrap_keyload(header.clone()) {
                                 Ok(_) => {
-                                    println!("Updated keyload!");
                                     break;
                                 }
                                 Err(e) => println!("Tagged Packet Error: {}", e),

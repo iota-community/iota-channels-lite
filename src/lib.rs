@@ -1,12 +1,5 @@
-//!
-//! PoC Lib
-//!
-pub mod transport;
+pub mod channels_lite;
+pub use channels_lite as channels;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+mod messaging;
+mod transport;

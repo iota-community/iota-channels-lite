@@ -23,12 +23,22 @@ Use `channel_subscriber.read_tagged()` to read a tagged message from the channel
 Use `channel_subscriber.disconnect()` to disconnect from a channel<br />
 
 # Try it yourself
-Clone the repo: <br />
+Clone the repo:<br />
 `git clone https://github.com/AleBuser/iota-channels-lite`<br />
-Open the Folder:<br />
+Enter into the folder:<br />
 `cd iota-channels-lite`<br />
-Run the code:<br />
-`cargo run`<br />
+Run the example code:<br />
+`cargo run --example example`<br />
+
+# Use it yourself
+Add the dependency to the `Cargo.toml` file: <br />
+`channels_lite = { git= "https://github.com/AleBuser/iota-channels-lite"}`<br />
+Import the channels into you code:<br />
+`use channels_lite::channels::channel_author;`<br />
+`use channels_lite::channels::channel_subscriber;`<br />
+
+# Careful
+Sometimes when using the same seed to open a channel multiple times errors occur
 
 # Todo
 - Implement key change

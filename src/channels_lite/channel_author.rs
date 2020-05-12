@@ -51,8 +51,6 @@ impl Channel {
        
         let announcement_message = self.author.announce().unwrap();
         async_messaging::send_message(&mut self.client, &announcement_message).await.unwrap();
-        println!("Announced a new channel");
-
         let announcement_address: String = announcement_message.link.appinst.to_string();
         let announcement_tag: String = announcement_message.link.msgid.to_string();
 
@@ -82,7 +80,6 @@ impl Channel {
                     if header.check_content_type(message::subscribe::TYPE) {
                         match self.author.unwrap_subscribe(header.clone()) {
                             Ok(_) => {
-                                println!("Subscribtion successfull"); 
                                 break;
                             },
                             Err(e) => println!("Subscribe Packet Error: {}", e),
@@ -111,7 +108,6 @@ impl Channel {
         let signed_packet_link = {
             let msg = self.author.sign_packet(&self.announcement_link, &public_payload, &private_payload).unwrap();
             async_messaging::send_message(&mut self.client, &msg).await.unwrap();
-            println!("Sent signed packet");
             msg.link.clone()
         };
 
@@ -127,7 +123,6 @@ impl Channel {
         let tagged_packet_link = {
             let msg = self.author.tag_packet(&self.keyload_link, &public_payload, &private_payload).unwrap();
             async_messaging::send_message(&mut self.client, &msg).await.unwrap();
-            println!("Sent tagged packet");
             msg.link.clone()
         };
         Ok(tagged_packet_link.msgid.to_string())
@@ -155,7 +150,6 @@ impl Channel {
                     if header.check_content_type(message::unsubscribe::TYPE) {
                         match self.author.unwrap_unsubscribe(header.clone()) {
                             Ok(_) => {
-                                println!("Unsubscribtion successfull");
                                 break;
                             },
                             Err(e) => println!("Unsubscribe Packet Error: {}", e),
