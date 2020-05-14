@@ -63,17 +63,8 @@ impl Channel {
         let message_list = self.client.recv_messages_with_options(&subscribe_link,()).unwrap();
     
         for tx in message_list.iter() {
-            let header_opt = match tx.parse_header(){
-                Ok(val) => Some(val),
-                Err(e) => {
-                    println!("Parsing Error Header: {}", e);
-                    None
-                }
-            };
-            match header_opt {
-                None => println!("Invalid message"),
-                Some(header) => {
-
+            match tx.parse_header(){
+                Ok(header) => {
                     if header.check_content_type(message::subscribe::TYPE) {
                         match self.author.unwrap_subscribe(header.clone()) {
                             Ok(_) => {
@@ -81,8 +72,12 @@ impl Channel {
                             },
                             Err(e) => println!("Subscribe Packet Error: {}", e),
                         }
-                        continue;
+                    }else{
+                        println!("Expected a subscription message, found {}", header.content_type());
                     }
+                }
+                Err(e) => {
+                    println!("Parsing Error Header: {}", e)
                 }
             }
         }
@@ -133,17 +128,8 @@ impl Channel {
         let message_list = self.client.recv_messages_with_options( &unsubscribe_link,()).unwrap();
     
         for tx in message_list.iter() {
-            let header_opt = match tx.parse_header(){
-                Ok(val) => Some(val),
-                Err(e) => {
-                    println!("Parsing Error Header: {}", e);
-                    None
-                }
-            };
-            match header_opt {
-                None => println!("Invalid message"),
-                Some(header) => {
-
+            match tx.parse_header(){
+                Ok(header) => {
                     if header.check_content_type(message::unsubscribe::TYPE) {
                         match self.author.unwrap_unsubscribe(header.clone()) {
                             Ok(_) => {
@@ -154,7 +140,10 @@ impl Channel {
                         continue;
                     }
                 }
-            }
+                Err(e) => {
+                    println!("Parsing Error Header: {}", e);
+                }
+            };
         }
         Ok(())
     }

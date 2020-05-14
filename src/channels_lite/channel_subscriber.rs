@@ -46,23 +46,20 @@ impl Channel {
 
         let mut found_valid_msg = false;
         for tx in message_list.iter(){
-            let preparsed = match tx.parse_header(){
-                Ok(val) => Some(val),
-                Err(e) => {
-                    println!("Parsing Error Header: {}", e);
-                    None
-                }
-            };
-            match preparsed {
-                None => println!("Invalid message"),
-                Some(header) => {
+            match tx.parse_header(){
+                Ok(header) => {
                     if header.check_content_type(message::announce::TYPE){
                         self.subscriber.unwrap_announcement(header.clone()).unwrap();
                         found_valid_msg = true;
                         break;
+                    }else{
+                        println!("Expected an announce message, found {}", header.content_type());
                     }
                 }
-            }
+                Err(e) => {
+                    println!("Parsing Error Header: {}", e);
+                }
+            };
         }
         
         if found_valid_msg {
@@ -103,18 +100,8 @@ impl Channel {
             let message_list = self.client.recv_messages_with_options(&link, ()).unwrap();
         
             for tx in message_list.iter() {
-                let preparsed: Option<Preparsed> = match tx.parse_header(){
-                    Ok(val) => {
-                        Some(val)
-                    },
-                    Err(e) => {
-                        println!("Parsing Error Header: {}", e);
-                        None
-                    }
-                };
-                match preparsed {
-                    None => println!("Invalid message"),
-                    Some(header) => {
+                match tx.parse_header(){
+                    Ok(header) => {
                         if header.check_content_type(message::signed_packet::TYPE) {
                             match self.subscriber.unwrap_signed_packet(header.clone()) {
                                 Ok((unwrapped_public, unwrapped_masked)) => {
@@ -122,12 +109,14 @@ impl Channel {
                                 }
                                 Err(e) => println!("Signed Packet Error: {}", e),
                             }
-                            continue;
                         }else{
-                            println!("Not a signed Packet insetad is: {}", header.content_type());
+                            println!("Expected a signed message, found {}", header.content_type());
                         }
                     }
-                }
+                    Err(e) => {
+                        println!("Parsing Error Header: {}", e);
+                    }
+                };
             }
 
         }else {
@@ -149,17 +138,8 @@ impl Channel {
             let message_list = self.client.recv_messages_with_options(&link, ()).unwrap();
 
             for tx in message_list.iter() {
-                let preparsed = match tx.parse_header(){
-                    Ok(val) => Some(val),
-                    Err(e) => {
-                        println!("Parsing Error Header: {}", e);
-                        None
-                    }
-                };
-                match preparsed {
-                    None => println!("Invalid message"),
-                    Some(header) => {
-
+                match tx.parse_header(){
+                    Ok(header) => {
                         if header.check_content_type(message::tagged_packet::TYPE) {
                             match self.subscriber.unwrap_tagged_packet(header.clone()) {
                                 Ok((unwrapped_public, unwrapped_masked)) => {
@@ -167,10 +147,14 @@ impl Channel {
                                 }
                                 Err(e) => println!("Tagged Packet Error: {}", e),
                             }
-                            continue;
+                        }else{
+                            println!("Expected a tagged message, found {}", header.content_type());
                         }
                     }
-                }
+                    Err(e) => {
+                        println!("Parsing Error Header: {}", e);
+                    }
+                };
             }
 
         }else {
@@ -207,7 +191,8 @@ impl Channel {
                                 }
                                 Err(e) => println!("Tagged Packet Error: {}", e),
                             }
-                            continue;
+                        }else{
+                            println!("Expected a keyload message, found {}", header.content_type());
                         }
                     }
                 }
