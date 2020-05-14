@@ -92,15 +92,22 @@ impl Channel {
 
     }
 
-    pub fn write_signed(&mut self, public_payload: &str, private_payload: &str)-> Result<String, &str>{
+    pub fn write_signed(&mut self, masked:bool, public_payload: &str, private_payload: &str)-> Result<String, &str>{
 
         let public_payload = Trytes(Tbits::from_str(&public_payload).unwrap());
         let private_payload = Trytes(Tbits::from_str(&private_payload).unwrap());
 
-        let signed_packet_link = {
-            let msg = self.author.sign_packet(&self.announcement_link, &public_payload, &private_payload).unwrap();
-            self.client.send_message_with_options(&msg, self.send_opt).unwrap();
-            msg.link.clone()
+        let signed_packet_link  = {
+
+            if masked{
+                let msg = self.author.sign_packet(&self.announcement_link, &public_payload, &private_payload).unwrap();
+                self.client.send_message_with_options(&msg, self.send_opt).unwrap();
+                msg.link.clone()
+            }else{
+                let msg = self.author.sign_packet(&self.keyload_link, &public_payload, &private_payload).unwrap();
+                self.client.send_message_with_options(&msg, self.send_opt).unwrap();
+                msg.link.clone()
+            }
         };
 
         Ok(signed_packet_link.msgid.to_string())
@@ -117,6 +124,7 @@ impl Channel {
             self.client.send_message_with_options(&msg, self.send_opt).unwrap();
             msg.link.clone()
         };
+
         Ok(tagged_packet_link.msgid.to_string())
 
     }
@@ -137,7 +145,8 @@ impl Channel {
                             },
                             Err(e) => println!("Unsubscribe Packet Error: {}", e),
                         }
-                        continue;
+                    }else{
+                        println!("Expected a unsubscription message, found {}", header.content_type());
                     }
                 }
                 Err(e) => {
