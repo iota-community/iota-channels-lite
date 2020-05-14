@@ -1,6 +1,6 @@
 #![cfg_attr(debug_assertions, allow(dead_code, unused_imports))]
 
-use iota::Client;
+use iota_lib_rs::prelude::iota_client;
 use iota_streams::app_channels::{
     api::tangle::{ Address, Author, DefaultTW, Message}
     , message
@@ -13,13 +13,10 @@ use std::string::ToString;
 use std::str::FromStr;
 use failure::Fallible;
 
-
-use crate::messaging::async_messaging;
-
 pub struct Channel{
     author: Author,
-    client: iota::Client<'static>,
-    send_options: SendTrytesOptions,
+    client: iota_client::Client<'static>,
+    send_opt: SendTrytesOptions,
     channel_address:String,
     announcement_link: Address,
     keyload_link: Address,
@@ -32,25 +29,25 @@ impl Channel {
         let author = Author::new(seed, 3, true);
 
         let channel_address = author.channel_address().to_string();
-        let mut send_opt = SendTrytesOptions::default();
 
+        let mut send_opt = SendTrytesOptions::default();
         send_opt.min_weight_magnitude = 9;
         send_opt.local_pow = false;
 
         Self {
             author:author,
-            client: iota::Client::new(node_ulr),
-            send_options: send_opt,
+            client: iota_client::Client::new(node_ulr),
+            send_opt: send_opt,
             channel_address:channel_address,
             announcement_link: Address::default(),
             keyload_link: Address::default(),
         }
     }
 
-    pub async fn open(&mut self)-> Result<(String, String), &str>{
+    pub fn open(&mut self)-> Result<(String, String), &str>{
        
         let announcement_message = self.author.announce().unwrap();
-        async_messaging::send_message(&mut self.client, &announcement_message).await.unwrap();
+        self.client.send_message_with_options(&announcement_message, self.send_opt).unwrap();
         let announcement_address: String = announcement_message.link.appinst.to_string();
         let announcement_tag: String = announcement_message.link.msgid.to_string();
 
@@ -59,11 +56,11 @@ impl Channel {
         Ok((self.channel_address.clone(), announcement_tag))
     }
 
-    pub async fn add_subscriber(&mut self, subscribe_tag: String) -> Result<String,&str>{
+    pub fn add_subscriber(&mut self, subscribe_tag: String) -> Result<String,&str>{
 
         let subscribe_link = Address::from_str(&self.channel_address, &subscribe_tag).unwrap();
 
-        let message_list = async_messaging::recv_messages(&mut self.client, &subscribe_link).await.unwrap();
+        let message_list = self.client.recv_messages_with_options(&subscribe_link,()).unwrap();
     
         for tx in message_list.iter() {
             let header_opt = match tx.parse_header(){
@@ -92,7 +89,7 @@ impl Channel {
 
         self.keyload_link = {
             let msg = self.author.share_keyload_for_everyone(&self.announcement_link).unwrap();
-            async_messaging::send_message(&mut self.client, &msg).await.unwrap();
+            self.client.send_message_with_options(&msg, self.send_opt).unwrap();
             msg.link
         };
 
@@ -100,14 +97,14 @@ impl Channel {
 
     }
 
-    pub async fn write_signed(&mut self, public_payload: &str, private_payload: &str)-> Result<String, &str>{
+    pub fn write_signed(&mut self, public_payload: &str, private_payload: &str)-> Result<String, &str>{
 
         let public_payload = Trytes(Tbits::from_str(&public_payload).unwrap());
         let private_payload = Trytes(Tbits::from_str(&private_payload).unwrap());
 
         let signed_packet_link = {
             let msg = self.author.sign_packet(&self.announcement_link, &public_payload, &private_payload).unwrap();
-            async_messaging::send_message(&mut self.client, &msg).await.unwrap();
+            self.client.send_message_with_options(&msg, self.send_opt).unwrap();
             msg.link.clone()
         };
 
@@ -115,25 +112,25 @@ impl Channel {
 
     }
 
-    pub async fn write_tagged(&mut self, public_payload: &str, private_payload: &str)-> Result<String, &str>{
+    pub fn write_tagged(&mut self, public_payload: &str, private_payload: &str)-> Result<String, &str>{
 
         let public_payload = Trytes(Tbits::from_str(&public_payload).unwrap());
         let private_payload = Trytes(Tbits::from_str(&private_payload).unwrap());
 
         let tagged_packet_link = {
             let msg = self.author.tag_packet(&self.keyload_link, &public_payload, &private_payload).unwrap();
-            async_messaging::send_message(&mut self.client, &msg).await.unwrap();
+            self.client.send_message_with_options(&msg, self.send_opt).unwrap();
             msg.link.clone()
         };
         Ok(tagged_packet_link.msgid.to_string())
 
     }
 
-    pub async fn remove_subscriber(&mut self, unsubscribe_tag: String) -> Fallible<()>{
+    pub fn remove_subscriber(&mut self, unsubscribe_tag: String) -> Fallible<()>{
 
         let unsubscribe_link = Address::from_str(&self.channel_address, &unsubscribe_tag).unwrap();
 
-        let message_list = async_messaging::recv_messages(&mut self.client, &unsubscribe_link).await.unwrap();
+        let message_list = self.client.recv_messages_with_options( &unsubscribe_link,()).unwrap();
     
         for tx in message_list.iter() {
             let header_opt = match tx.parse_header(){
