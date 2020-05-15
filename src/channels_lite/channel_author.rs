@@ -63,17 +63,8 @@ impl Channel {
         let message_list = self.client.recv_messages_with_options(&subscribe_link,()).unwrap();
     
         for tx in message_list.iter() {
-            let header_opt = match tx.parse_header(){
-                Ok(val) => Some(val),
-                Err(e) => {
-                    println!("Parsing Error Header: {}", e);
-                    None
-                }
-            };
-            match header_opt {
-                None => println!("Invalid message"),
-                Some(header) => {
-
+            match tx.parse_header(){
+                Ok(header) => {
                     if header.check_content_type(message::subscribe::TYPE) {
                         match self.author.unwrap_subscribe(header.clone()) {
                             Ok(_) => {
@@ -81,8 +72,12 @@ impl Channel {
                             },
                             Err(e) => println!("Subscribe Packet Error: {}", e),
                         }
-                        continue;
+                    }else{
+                        println!("Expected a subscription message, found {}", header.content_type());
                     }
+                }
+                Err(e) => {
+                    println!("Parsing Error Header: {}", e)
                 }
             }
         }
@@ -97,15 +92,22 @@ impl Channel {
 
     }
 
-    pub fn write_signed(&mut self, public_payload: &str, private_payload: &str)-> Result<String, &str>{
+    pub fn write_signed(&mut self, masked:bool, public_payload: &str, private_payload: &str)-> Result<String, &str>{
 
         let public_payload = Trytes(Tbits::from_str(&public_payload).unwrap());
         let private_payload = Trytes(Tbits::from_str(&private_payload).unwrap());
 
-        let signed_packet_link = {
-            let msg = self.author.sign_packet(&self.announcement_link, &public_payload, &private_payload).unwrap();
-            self.client.send_message_with_options(&msg, self.send_opt).unwrap();
-            msg.link.clone()
+        let signed_packet_link  = {
+
+            if masked{
+                let msg = self.author.sign_packet(&self.announcement_link, &public_payload, &private_payload).unwrap();
+                self.client.send_message_with_options(&msg, self.send_opt).unwrap();
+                msg.link.clone()
+            }else{
+                let msg = self.author.sign_packet(&self.keyload_link, &public_payload, &private_payload).unwrap();
+                self.client.send_message_with_options(&msg, self.send_opt).unwrap();
+                msg.link.clone()
+            }
         };
 
         Ok(signed_packet_link.msgid.to_string())
@@ -122,6 +124,7 @@ impl Channel {
             self.client.send_message_with_options(&msg, self.send_opt).unwrap();
             msg.link.clone()
         };
+
         Ok(tagged_packet_link.msgid.to_string())
 
     }
@@ -133,17 +136,8 @@ impl Channel {
         let message_list = self.client.recv_messages_with_options( &unsubscribe_link,()).unwrap();
     
         for tx in message_list.iter() {
-            let header_opt = match tx.parse_header(){
-                Ok(val) => Some(val),
-                Err(e) => {
-                    println!("Parsing Error Header: {}", e);
-                    None
-                }
-            };
-            match header_opt {
-                None => println!("Invalid message"),
-                Some(header) => {
-
+            match tx.parse_header(){
+                Ok(header) => {
                     if header.check_content_type(message::unsubscribe::TYPE) {
                         match self.author.unwrap_unsubscribe(header.clone()) {
                             Ok(_) => {
@@ -151,10 +145,14 @@ impl Channel {
                             },
                             Err(e) => println!("Unsubscribe Packet Error: {}", e),
                         }
-                        continue;
+                    }else{
+                        println!("Expected a unsubscription message, found {}", header.content_type());
                     }
                 }
-            }
+                Err(e) => {
+                    println!("Parsing Error Header: {}", e);
+                }
+            };
         }
         Ok(())
     }
