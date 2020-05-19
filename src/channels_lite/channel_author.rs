@@ -13,6 +13,7 @@ use std::string::ToString;
 use std::str::FromStr;
 use failure::Fallible;
 
+
 pub struct Channel{
     author: Author,
     client: iota_client::Client<'static>,
@@ -45,7 +46,7 @@ impl Channel {
     }
 
     pub fn open(&mut self)-> Result<(String, String), &str>{
-       
+
         let announcement_message = self.author.announce().unwrap();
         self.client.send_message_with_options(&announcement_message, self.send_opt).unwrap();
         let announcement_address: String = announcement_message.link.appinst.to_string();
@@ -100,11 +101,11 @@ impl Channel {
         let signed_packet_link  = {
 
             if masked{
-                let msg = self.author.sign_packet(&self.announcement_link, &public_payload, &private_payload).unwrap();
+                let msg = self.author.sign_packet(&self.keyload_link, &public_payload, &private_payload).unwrap();
                 self.client.send_message_with_options(&msg, self.send_opt).unwrap();
                 msg.link.clone()
             }else{
-                let msg = self.author.sign_packet(&self.keyload_link, &public_payload, &private_payload).unwrap();
+                let msg = self.author.sign_packet(&self.announcement_link, &public_payload, &private_payload).unwrap();
                 self.client.send_message_with_options(&msg, self.send_opt).unwrap();
                 msg.link.clone()
             }
