@@ -189,7 +189,7 @@ impl Channel {
                                 Ok(_) => {
                                     break;
                                 }
-                                Err(e) => println!("Tagged Packet Error: {}", e),
+                                Err(e) => println!("Keyload Packet Error: {}", e),
                             }
                         }else{
                             println!("Expected a keyload message, found {}", header.content_type());

@@ -42,6 +42,7 @@ async fn main()-> Fallible<()>{
     //Connect to channel
     let subscription_tag = channel_subscriber.connect().unwrap();
     println!("Subscriber: Connected to channel");
+    println!("subscription_tag: {}", subscription_tag);
 
 
 
@@ -101,6 +102,7 @@ async fn main()-> Fallible<()>{
     //Disconnect from channel
     let unsubscribe_tag = channel_subscriber.disconnect().unwrap();
     println!("Subscriber: Disconnected from channel");
+    println!("unsubscribe_tag: {}", unsubscribe_tag);
 
 
 
