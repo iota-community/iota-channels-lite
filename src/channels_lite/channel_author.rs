@@ -84,7 +84,7 @@ impl Channel {
         }
 
         self.keyload_link = {
-            let msg = self.author.share_keyload_for_everyone(&self.announcement_link).unwrap();
+            let msg = self.author.share_keyload_for_everyone(&subscribe_link).unwrap();
             self.client.send_message_with_options(&msg, self.send_opt).unwrap();
             msg.link
         };

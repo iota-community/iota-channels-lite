@@ -9,8 +9,8 @@ use channels_lite::channels::channel_subscriber;
 #[tokio::main]
 async fn main()-> Fallible<()>{
 
-    let seed_author = "SOME9AUTHOR9SEED9SECRTE9A";
-    let seed_subscriber = "SOME9SUBSCRIBER9SEED";
+    let seed_author = "SOME9AUTHOR9SEED9SECRTE9U";
+    let seed_subscriber = "SOME9SUBSCRIBER9SEET";
 
     let node:  &'static str = "https://nodes.devnet.iota.org:443";
 
@@ -53,6 +53,7 @@ async fn main()-> Fallible<()>{
 
 
     let keyload_tag = channel_author.add_subscriber(subscription_tag).unwrap();
+    println!("keyload_tag: {}", keyload_tag);
 
     //Send Messages
     let signed_packed_tag_public:String = channel_author.write_signed(false, "PAYLOAD9SIGNED9PUBLIC", "").unwrap();
