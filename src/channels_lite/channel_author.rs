@@ -20,7 +20,7 @@ pub struct Channel{
     send_opt: SendTrytesOptions,
     channel_address:String,
     announcement_link: Address,
-    keyload_link: Address,
+    keyload_tag: String,
 }
 
 impl Channel {
@@ -41,7 +41,7 @@ impl Channel {
             send_opt: send_opt,
             channel_address:channel_address,
             announcement_link: Address::default(),
-            keyload_link: Address::default(),
+            keyload_tag: String::default(),
         }
     }
 
@@ -83,13 +83,13 @@ impl Channel {
             }
         }
 
-        self.keyload_link = {
+        self.keyload_tag = {
             let msg = self.author.share_keyload_for_everyone(&subscribe_link).unwrap();
             self.client.send_message_with_options(&msg, self.send_opt).unwrap();
-            msg.link
+            msg.link.msgid.to_string()
         };
 
-        Ok(self.keyload_link.msgid.to_string())
+        Ok(self.keyload_tag.clone())
 
     }
 
@@ -98,10 +98,12 @@ impl Channel {
         let public_payload = Trytes(Tbits::from_str(&public_payload).unwrap());
         let private_payload = Trytes(Tbits::from_str(&private_payload).unwrap());
 
+        let keyload_link =  Address::from_str(&self.channel_address, &self.keyload_tag).unwrap();
+
         let signed_packet_link  = {
 
             if masked{
-                let msg = self.author.sign_packet(&self.keyload_link, &public_payload, &private_payload).unwrap();
+                let msg = self.author.sign_packet(&keyload_link, &public_payload, &private_payload).unwrap();
                 self.client.send_message_with_options(&msg, self.send_opt).unwrap();
                 msg.link.clone()
             }else{
@@ -120,8 +122,10 @@ impl Channel {
         let public_payload = Trytes(Tbits::from_str(&public_payload).unwrap());
         let private_payload = Trytes(Tbits::from_str(&private_payload).unwrap());
 
+        let keyload_link =  Address::from_str(&self.channel_address, &self.keyload_tag).unwrap();
+
         let tagged_packet_link = {
-            let msg = self.author.tag_packet(&self.keyload_link, &public_payload, &private_payload).unwrap();
+            let msg = self.author.tag_packet(&keyload_link, &public_payload, &private_payload).unwrap();
             self.client.send_message_with_options(&msg, self.send_opt).unwrap();
             msg.link.clone()
         };
