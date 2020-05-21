@@ -1,6 +1,6 @@
 [package]
 name = "channels_lite"
-version = "0.1.0"
+version = "0.2.1"
 authors = ["Yolier Galán Tassé <gallegogt@gmail.com>", "Alessandro Buser <4l3bu53r@gmail.com>"]
 edition = "2018"
 license = "Apache-2.0/MIT"
