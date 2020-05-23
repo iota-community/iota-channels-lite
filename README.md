@@ -2,11 +2,11 @@
 
 This repository contains sample code for you to get started with the Channels application in IOTA Streams.
 
-You can find documentation for these examples on the [IOTA documentation portal](https://docs.iota.org/docs/channels/introduction/get-started.md).
+You can find documentation for these examples on the [IOTA documentation portal](https://docs.iota.org/docs/iota-streams/1.0/overview).
 
 # Goal
 The goal is to build a narrow high-level API that can reduce development complexity when working with IOTA-Streams.
-The two classes `channel_author` and `channel_subscriber` fix the Tangle as transport medium for the stream, removing the need for the developer to intercat or even understand the complexities of IOTA and the IOTA Streams. 
+The two classes `channel_author` and `channel_subscriber` fix the Tangle as transport medium for the stream, removing the need for the developer to interact or even understand the complexities of IOTA and the IOTA Streams. 
 
 # How It Works
 
