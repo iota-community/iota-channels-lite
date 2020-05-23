@@ -6,12 +6,9 @@ use iota_lib_rs::prelude::iota_client;
 use iota_streams::app::transport::tangle::client::SendTrytesOptions;
 use iota_streams::app::transport::Transport;
 use iota_streams::app_channels::{
-    api::tangle::{Address, Author, DefaultTW, Message},
+    api::tangle::{Address, Author},
     message,
 };
-use iota_streams::core::tbits::Tbits;
-use iota_streams::protobuf3::types::Trytes;
-use std::str::FromStr;
 use std::string::ToString;
 
 pub struct Channel {
@@ -99,22 +96,21 @@ impl Channel {
         Ok(self.keyload_tag.clone())
     }
 
-    pub fn write_signed(
-        &mut self,
-        masked: bool,
-        public_payload: &str,
-        private_payload: &str,
-    ) -> Result<String, &str> {
-        let public_payload = Trytes(Tbits::from_str(&public_payload).unwrap());
-        let private_payload = Trytes(Tbits::from_str(&private_payload).unwrap());
-
+    pub fn write_signed<T>(&mut self, masked: bool, payload: T) -> Result<String, &str>
+    where
+        T: PacketPayload,
+    {
         let keyload_link = Address::from_str(&self.channel_address, &self.keyload_tag).unwrap();
 
         let signed_packet_link = {
             if masked {
                 let msg = self
                     .author
-                    .sign_packet(&keyload_link, &public_payload, &private_payload)
+                    .sign_packet(
+                        &keyload_link,
+                        &payload.public_data(),
+                        &payload.masked_data(),
+                    )
                     .unwrap();
                 self.client
                     .send_message_with_options(&msg, self.send_opt)
@@ -123,7 +119,11 @@ impl Channel {
             } else {
                 let msg = self
                     .author
-                    .sign_packet(&self.announcement_link, &public_payload, &private_payload)
+                    .sign_packet(
+                        &self.announcement_link,
+                        &payload.public_data(),
+                        &payload.masked_data(),
+                    )
                     .unwrap();
                 self.client
                     .send_message_with_options(&msg, self.send_opt)
@@ -135,20 +135,20 @@ impl Channel {
         Ok(signed_packet_link.msgid.to_string())
     }
 
-    pub fn write_tagged(
-        &mut self,
-        public_payload: &str,
-        private_payload: &str,
-    ) -> Result<String, &str> {
-        let public_payload = Trytes(Tbits::from_str(&public_payload).unwrap());
-        let private_payload = Trytes(Tbits::from_str(&private_payload).unwrap());
-
+    pub fn write_tagged<T>(&mut self, payload: T) -> Result<String, &str>
+    where
+        T: PacketPayload,
+    {
         let keyload_link = Address::from_str(&self.channel_address, &self.keyload_tag).unwrap();
 
         let tagged_packet_link = {
             let msg = self
                 .author
-                .tag_packet(&keyload_link, &public_payload, &private_payload)
+                .tag_packet(
+                    &keyload_link,
+                    &payload.public_data(),
+                    &payload.masked_data(),
+                )
                 .unwrap();
             self.client
                 .send_message_with_options(&msg, self.send_opt)
@@ -191,4 +191,3 @@ impl Channel {
         Ok(())
     }
 }
-

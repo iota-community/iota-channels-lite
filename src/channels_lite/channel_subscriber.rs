@@ -1,13 +1,14 @@
 #![cfg_attr(debug_assertions, allow(dead_code, unused_imports))]
+use crate::channels::payload::json::Payload;
+use failure::Fallible;
 use iota_lib_rs::prelude::iota_client;
+use iota_streams::app::transport::tangle::client::SendTrytesOptions;
 use iota_streams::app::transport::Transport;
 use iota_streams::app_channels::{
-    api::tangle::{Address, DefaultTW, Message, Preparsed, Subscriber},
+    api::tangle::{Address, Subscriber},
     message,
 };
-
-use failure::{ensure, Fallible};
-use iota_streams::app::transport::tangle::client::SendTrytesOptions;
+use serde::de::DeserializeOwned;
 
 pub struct Channel {
     subscriber: Subscriber,
@@ -100,11 +101,14 @@ impl Channel {
         Ok(unsubscribe_link.to_string())
     }
 
-    pub fn read_signed(
+    pub fn read_signed<T>(
         &mut self,
         signed_packet_tag: String,
-    ) -> Result<Vec<(String, String)>, &str> {
-        let mut response: Vec<(String, String)> = Vec::new();
+    ) -> Fallible<Vec<(Option<T>, Option<T>)>>
+    where
+        T: DeserializeOwned,
+    {
+        let mut response: Vec<(Option<T>, Option<T>)> = Vec::new();
 
         if self.is_connected {
             let link = Address::from_str(&self.channel_address, &signed_packet_tag).unwrap();
@@ -117,8 +121,8 @@ impl Channel {
                             match self.subscriber.unwrap_signed_packet(header.clone()) {
                                 Ok((unwrapped_public, unwrapped_masked)) => {
                                     response.push((
-                                        unwrapped_public.to_string(),
-                                        unwrapped_masked.to_string(),
+                                        Payload::unwrap_data(&unwrapped_public)?,
+                                        Payload::unwrap_data(&unwrapped_masked)?,
                                     ));
                                 }
                                 Err(e) => println!("Signed Packet Error: {}", e),
@@ -139,11 +143,14 @@ impl Channel {
         Ok(response)
     }
 
-    pub fn read_tagged(
+    pub fn read_tagged<T>(
         &mut self,
         tagged_packet_tag: String,
-    ) -> Result<Vec<(String, String)>, &str> {
-        let mut response: Vec<(String, String)> = Vec::new();
+    ) -> Fallible<Vec<(Option<T>, Option<T>)>>
+    where
+        T: DeserializeOwned,
+    {
+        let mut response: Vec<(Option<T>, Option<T>)> = Vec::new();
 
         if self.is_connected {
             let link = Address::from_str(&self.channel_address, &tagged_packet_tag).unwrap();
@@ -157,8 +164,8 @@ impl Channel {
                             match self.subscriber.unwrap_tagged_packet(header.clone()) {
                                 Ok((unwrapped_public, unwrapped_masked)) => {
                                     response.push((
-                                        unwrapped_public.to_string(),
-                                        unwrapped_masked.to_string(),
+                                        Payload::unwrap_data(&unwrapped_public)?,
+                                        Payload::unwrap_data(&unwrapped_masked)?,
                                     ));
                                 }
                                 Err(e) => println!("Tagged Packet Error: {}", e),
@@ -222,4 +229,3 @@ impl Channel {
         Ok(())
     }
 }
-
