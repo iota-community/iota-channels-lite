@@ -18,11 +18,15 @@ pub struct Channel {
     channel_address: String,
     announcement_link: Address,
     keyload_tag: String,
+    mss_height: u32,
+    /// Posible numbers of messages to sign before change the key
+    remaining_signed_messages: u32,
 }
 
 impl Channel {
     pub fn new(seed: &str, node_ulr: &'static str) -> Channel {
-        let author = Author::new(seed, 3, true);
+        let mss_height = 3_u32;
+        let author = Author::new(seed, mss_height as usize, true);
 
         let channel_address = author.channel_address().to_string();
 
@@ -37,6 +41,8 @@ impl Channel {
             channel_address: channel_address,
             announcement_link: Address::default(),
             keyload_tag: String::default(),
+            mss_height: mss_height,
+            remaining_signed_messages: 2_u32.pow(mss_height),
         }
     }
 
@@ -191,11 +197,19 @@ impl Channel {
         Ok(())
     }
 
-    pub fn change_key(&mut self) -> Result<String, &str> {
-        let msg = self.author.change_key(&self.announcement_link).unwrap();
-        self.client
-            .send_message_with_options(&msg, self.send_opt)
-            .unwrap();
-        Ok(msg.link.msgid.to_string())
+    /// Try to do change key if not more signed key is available
+    ///
+    /// Return a Option with Message Id if the mss key is changed
+    ///
+    pub fn try_change_key(&mut self) -> Fallible<Option<String>> {
+        if self.remaining_signed_messages <= 0 {
+            let msg = self.author.change_key(&self.announcement_link)?;
+            self.remaining_signed_messages = 2_u32.pow(self.mss_height);
+            self.client.send_message_with_options(&msg, self.send_opt)?;
+            return Ok(Some(msg.link.msgid.to_string()));
+        } else {
+            self.remaining_signed_messages -= 1;
+        }
+        return Ok(None);
     }
 }

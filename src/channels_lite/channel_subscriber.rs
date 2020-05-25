@@ -235,4 +235,50 @@ impl Channel {
 
         Ok(())
     }
+
+    ///
+    /// Update the change key
+    ///
+    pub fn update_change_key(&mut self, change_key_tag: String) -> Fallible<()> {
+        let keyload_link = Address::from_str(&self.channel_address, &change_key_tag).unwrap();
+
+        if self.is_connected {
+            let message_list = self
+                .client
+                .recv_messages_with_options(&keyload_link, ())
+                .unwrap();
+
+            for tx in message_list.iter() {
+                let preparsed = match tx.parse_header() {
+                    Ok(val) => Some(val),
+                    Err(e) => {
+                        println!("Parsing Error Header: {}", e);
+                        None
+                    }
+                };
+                match preparsed {
+                    None => println!("Invalid message"),
+                    Some(header) => {
+                        if header.check_content_type(message::change_key::TYPE) {
+                            match self.subscriber.unwrap_change_key(header.clone()) {
+                                Ok(_) => {
+                                    break;
+                                }
+                                Err(e) => println!("Keyload Packet Error: {}", e),
+                            }
+                        } else {
+                            println!(
+                                "Expected a keyload message, found {}",
+                                header.content_type()
+                            );
+                        }
+                    }
+                }
+            }
+        } else {
+            println!("Channel not connected");
+        }
+
+        Ok(())
+    }
 }

@@ -72,6 +72,13 @@ async fn main() -> Fallible<()> {
         .unwrap();
     println!("Author: Sent signed public message");
 
+    // Before sending a signed message you must be check if you have more secrets key availables
+    // and change the MSS Keys
+    let change_key_tag = channel_author.try_change_key()?;
+    if change_key_tag.is_some() {
+        println!("Author: Sent change key message");
+    }
+
     let signed_packed_tag_masked: String = channel_author
         .write_signed(
             false,
@@ -98,6 +105,11 @@ async fn main() -> Fallible<()> {
 
     channel_subscriber.update_keyload(keyload_tag).unwrap();
     println!("Subscriber: Updated keyload");
+
+    if change_key_tag.is_some() {
+        println!("Subscriber: Reading change key messages");
+        channel_subscriber.update_change_key(change_key_tag.unwrap())?;
+    }
 
     //Read all signed messages
     let list_signed_public: Vec<(Option<SensorData>, Option<SensorData>)> = channel_subscriber
@@ -137,15 +149,15 @@ async fn main() -> Fallible<()> {
     }
 
     //Change Keyload
-    let change_key_tag = channel_author.change_key().unwrap();
-    println!("Author: Changed key for channel");
+    // let change_key_tag = channel_author.change_key().unwrap();
+    // println!("Author: Changed key for channel");
 
     //Give messages some time to propagate
     println!("Waiting for propagation... ({}s)", delay_time);
     thread::sleep(Duration::from_secs(delay_time));
 
-    channel_subscriber.update_keyload(change_key_tag).unwrap();
-    println!("Subscriber: Updated key for channel");
+    // channel_subscriber.update_keyload(change_key_tag).unwrap();
+    // println!("Subscriber: Updated key for channel");
 
     //Disconnect from channel
     let unsubscribe_tag = channel_subscriber.disconnect().unwrap();
