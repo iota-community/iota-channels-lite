@@ -149,15 +149,15 @@ async fn main() -> Fallible<()> {
     }
 
     //Change Keyload
-    let change_key_tag = channel_author.change_key().unwrap();
-    println!("Author: Changed key for channel");
+    // let change_key_tag = channel_author.change_key().unwrap();
+    // println!("Author: Changed key for channel");
 
     //Give messages some time to propagate
     println!("Waiting for propagation... ({}s)", delay_time);
     thread::sleep(Duration::from_secs(delay_time));
 
-    channel_subscriber.update_keyload(change_key_tag).unwrap();
-    println!("Subscriber: Updated key for channel");
+    // channel_subscriber.update_keyload(change_key_tag).unwrap();
+    // println!("Subscriber: Updated key for channel");
 
     //Disconnect from channel
     let unsubscribe_tag = channel_subscriber.disconnect().unwrap();
