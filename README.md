@@ -14,6 +14,7 @@ Use `channel_author.open()` to open the channel and get the announcement verifie
 Use `channel_author.add_subscriber()` to add a subscriber to the channel <br />
 Use `channel_author.write_signed()` to write a signed message(public or masked) into the channel <br />
 Use `channel_author.write_tagged()` to write a tagged message(public or masked) into the channel <br />
+Use `channel_author.change_key()` to cahnge the session key of the channel <br />
 Use `channel_author.remove_subscriber()` to remove a subscriber from the channel <br />
 <br />
 Use `channel_subscriber.connect()` to connect to a channel<br />
@@ -37,8 +38,4 @@ Import the channels into you code:<br />
 `use channels_lite::channels::channel_author;`<br />
 `use channels_lite::channels::channel_subscriber;`<br />
 
-# Careful
-Sometimes when using the same seed to open a channel multiple times errors occur
 
-# Todo
-- Implement key change
