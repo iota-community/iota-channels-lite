@@ -74,7 +74,7 @@ async fn main() -> Fallible<()> {
 
     // Before sending a signed message you must be check if you have more secrets key availables
     // and change the MSS Keys
-    let change_key_tag = channel_author.try_change_key()?;
+    let change_key_tag = channel_author.try_change_key(false)?;
     if change_key_tag.is_some() {
         println!("Author: Sent change key message");
     }

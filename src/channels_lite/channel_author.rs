@@ -201,8 +201,8 @@ impl Channel {
     ///
     /// Return a Option with Message Id if the mss key is changed
     ///
-    pub fn try_change_key(&mut self) -> Fallible<Option<String>> {
-        if self.remaining_signed_messages <= 0 {
+    pub fn try_change_key(&mut self, force: bool) -> Fallible<Option<String>> {
+        if self.remaining_signed_messages <= 0 || force == true {
             let msg = self.author.change_key(&self.announcement_link)?;
             self.remaining_signed_messages = 2_u32.pow(self.mss_height);
             self.client.send_message_with_options(&msg, self.send_opt)?;
