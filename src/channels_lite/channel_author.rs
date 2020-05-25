@@ -190,4 +190,12 @@ impl Channel {
         }
         Ok(())
     }
+
+    pub fn change_key(&mut self) -> Result<String, &str> {
+        let msg = self.author.change_key(&self.announcement_link).unwrap();
+        self.client
+            .send_message_with_options(&msg, self.send_opt)
+            .unwrap();
+        Ok(msg.link.msgid.to_string())
+    }
 }

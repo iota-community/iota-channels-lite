@@ -213,6 +213,13 @@ impl Channel {
                                 }
                                 Err(e) => println!("Keyload Packet Error: {}", e),
                             }
+                        } else if header.check_content_type(message::change_key::TYPE) {
+                            match self.subscriber.unwrap_change_key(header.clone()) {
+                                Ok(_) => {
+                                    break;
+                                }
+                                Err(e) => println!("Change Key Packet Error: {}", e),
+                            }
                         } else {
                             println!(
                                 "Expected a keyload message, found {}",

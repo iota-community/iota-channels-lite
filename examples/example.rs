@@ -29,8 +29,8 @@ impl SensorData {
 
 #[tokio::main]
 async fn main() -> Fallible<()> {
-    let seed_author = "SOME9AUTHOR9SEED9SECRTE9UK";
-    let seed_subscriber = "SOME9SUBSCRIBER9SEETK";
+    let seed_author = "SOME9AUTHOR9SEED9SECRTE9UKOL";
+    let seed_subscriber = "SOME9SUBSCRIBER9SEETKEW";
 
     let node: &'static str = "https://nodes.devnet.iota.org:443";
 
@@ -42,8 +42,6 @@ async fn main() -> Fallible<()> {
     //Open Channel
     let (channel_address, announcement_tag) = channel_author.open().unwrap();
     println!("Author: Announced channel");
-    println!("channel_address: {}", channel_address);
-    println!("announcement_tag: {}", announcement_tag);
 
     //Give messages some time to propagate
     println!("Waiting for propagation... ({}s)", delay_time);
@@ -138,10 +136,20 @@ async fn main() -> Fallible<()> {
         )
     }
 
+    //Change Keyload
+    let change_key_tag = channel_author.change_key().unwrap();
+    println!("Author: Changed key for channel");
+
+    //Give messages some time to propagate
+    println!("Waiting for propagation... ({}s)", delay_time);
+    thread::sleep(Duration::from_secs(delay_time));
+
+    channel_subscriber.update_keyload(change_key_tag).unwrap();
+    println!("Subscriber: Updated key for channel");
+
     //Disconnect from channel
     let unsubscribe_tag = channel_subscriber.disconnect().unwrap();
     println!("Subscriber: Disconnected from channel");
-    println!("unsubscribe_tag: {}", unsubscribe_tag);
 
     //Give messages some time to propagate
     println!("Waiting for propagation... ({}s)", delay_time);
