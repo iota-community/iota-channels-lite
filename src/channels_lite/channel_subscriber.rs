@@ -1,4 +1,6 @@
-#![cfg_attr(debug_assertions, allow(dead_code, unused_imports))]
+//!
+//! Channel Subscriber
+//!
 use crate::utils::payload::json::Payload;
 use failure::Fallible;
 use iota_lib_rs::prelude::iota_client;
@@ -10,6 +12,9 @@ use iota_streams::app_channels::{
 };
 use serde::de::DeserializeOwned;
 
+///
+/// Channel subscriber
+///
 pub struct Channel {
     subscriber: Subscriber,
     is_connected: bool,
@@ -21,9 +26,12 @@ pub struct Channel {
 }
 
 impl Channel {
+    ///
+    /// Initialize the subscriber
+    ///
     pub fn new(
         seed: &str,
-        node_ulr: &'static str,
+        node_url: &'static str,
         channel_address: String,
         announcement_tag: String,
     ) -> Channel {
@@ -37,13 +45,16 @@ impl Channel {
             subscriber: subscriber,
             is_connected: false,
             send_opt: options,
-            client: iota_client::Client::new(node_ulr),
+            client: iota_client::Client::new(node_url),
             announcement_link: Address::from_str(&channel_address, &announcement_tag).unwrap(),
             subscription_link: Address::default(),
             channel_address: channel_address,
         }
     }
 
+    ///
+    /// Connect
+    ///
     pub fn connect(&mut self) -> Result<String, &str> {
         let message_list = self
             .client
@@ -87,6 +98,9 @@ impl Channel {
         Ok(self.subscription_link.msgid.to_string())
     }
 
+    ///
+    /// Disconnect
+    ///
     pub fn disconnect(&mut self) -> Result<String, &str> {
         let unsubscribe_link = {
             let msg = self
@@ -101,6 +115,9 @@ impl Channel {
         Ok(unsubscribe_link.to_string())
     }
 
+    ///
+    /// Read signed packet
+    ///
     pub fn read_signed<T>(
         &mut self,
         signed_packet_tag: String,
@@ -148,6 +165,9 @@ impl Channel {
         Ok(response)
     }
 
+    ///
+    /// Read tagged packet
+    ///
     pub fn read_tagged<T>(
         &mut self,
         tagged_packet_tag: String,
@@ -191,6 +211,9 @@ impl Channel {
         Ok(response)
     }
 
+    ///
+    /// Update keyload
+    ///
     pub fn update_keyload(&mut self, keyload_tag: String) -> Fallible<()> {
         let keyload_link = Address::from_str(&self.channel_address, &keyload_tag).unwrap();
 
