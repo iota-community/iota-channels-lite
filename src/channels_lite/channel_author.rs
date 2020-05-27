@@ -1,6 +1,7 @@
 #![cfg_attr(debug_assertions, allow(dead_code, unused_imports))]
 
-use crate::channels::payload::PacketPayload;
+use crate::utils::payload::PacketPayload;
+use crate::utils::response_write_signed::ResponseSigned;
 use failure::Fallible;
 use iota_lib_rs::prelude::iota_client;
 use iota_streams::app::transport::tangle::client::SendTrytesOptions;
@@ -18,11 +19,15 @@ pub struct Channel {
     channel_address: String,
     announcement_link: Address,
     keyload_tag: String,
+    mss_height: u32,
+    /// Posible numbers of messages to sign before change the key
+    remaining_signed_messages: u32,
 }
 
 impl Channel {
     pub fn new(seed: &str, node_ulr: &'static str) -> Channel {
-        let author = Author::new(seed, 3, true);
+        let mss_height = 3_u32;
+        let author = Author::new(seed, mss_height as usize, true);
 
         let channel_address = author.channel_address().to_string();
 
@@ -37,6 +42,8 @@ impl Channel {
             channel_address: channel_address,
             announcement_link: Address::default(),
             keyload_tag: String::default(),
+            mss_height: mss_height,
+            remaining_signed_messages: 2_u32.pow(mss_height),
         }
     }
 
@@ -96,10 +103,12 @@ impl Channel {
         Ok(self.keyload_tag.clone())
     }
 
-    pub fn write_signed<T>(&mut self, masked: bool, payload: T) -> Result<String, &str>
+    pub fn write_signed<T>(&mut self, masked: bool, payload: T) -> Result<ResponseSigned, &str>
     where
         T: PacketPayload,
     {
+        let change_key_tag = self.try_change_key(false).unwrap();
+
         let keyload_link = Address::from_str(&self.channel_address, &self.keyload_tag).unwrap();
 
         let signed_packet_link = {
@@ -132,7 +141,10 @@ impl Channel {
             }
         };
 
-        Ok(signed_packet_link.msgid.to_string())
+        Ok(ResponseSigned {
+            signed_message_tag: signed_packet_link.msgid.to_string(),
+            change_key_tag: change_key_tag,
+        })
     }
 
     pub fn write_tagged<T>(&mut self, payload: T) -> Result<String, &str>
@@ -189,5 +201,21 @@ impl Channel {
             };
         }
         Ok(())
+    }
+
+    /// Try to do change key if not more signed key is available
+    ///
+    /// Return a Option with Message Id if the mss key is changed
+    ///
+    pub fn try_change_key(&mut self, force: bool) -> Fallible<Option<String>> {
+        if self.remaining_signed_messages <= 0 || force == true {
+            let msg = self.author.change_key(&self.announcement_link)?;
+            self.remaining_signed_messages = 2_u32.pow(self.mss_height);
+            self.client.send_message_with_options(&msg, self.send_opt)?;
+            return Ok(Some(msg.link.msgid.to_string()));
+        } else {
+            self.remaining_signed_messages -= 1;
+        }
+        return Ok(None);
     }
 }

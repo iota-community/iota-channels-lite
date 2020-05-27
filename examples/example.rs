@@ -1,4 +1,5 @@
-use channels_lite::channels::{channel_author, channel_subscriber, payload::json::PayloadBuilder};
+use channels_lite::channels::{channel_author, channel_subscriber};
+use channels_lite::utils::payload::json::PayloadBuilder;
 use failure::Fallible;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -29,8 +30,8 @@ impl SensorData {
 
 #[tokio::main]
 async fn main() -> Fallible<()> {
-    let seed_author = "SOME9AUTHOR9SEED9SECRTE9UK";
-    let seed_subscriber = "SOME9SUBSCRIBER9SEETK";
+    let seed_author = "SOME9AUTHOR9SEED9SECRTE9UKOL";
+    let seed_subscriber = "SOME9SUBSCRIBER9SEETKEW";
 
     let node: &'static str = "https://nodes.devnet.iota.org:443";
 
@@ -42,8 +43,6 @@ async fn main() -> Fallible<()> {
     //Open Channel
     let (channel_address, announcement_tag) = channel_author.open().unwrap();
     println!("Author: Announced channel");
-    println!("channel_address: {}", channel_address);
-    println!("announcement_tag: {}", announcement_tag);
 
     //Give messages some time to propagate
     println!("Waiting for propagation... ({}s)", delay_time);
@@ -56,25 +55,29 @@ async fn main() -> Fallible<()> {
     //Connect to channel
     let subscription_tag = channel_subscriber.connect().unwrap();
     println!("Subscriber: Connected to channel");
-    println!("subscription_tag: {}", subscription_tag);
 
     //Give messages some time to propagate
     println!("Waiting for propagation... ({}s)", delay_time);
     thread::sleep(Duration::from_secs(delay_time));
 
+    //Add subscriber
     let keyload_tag = channel_author.add_subscriber(subscription_tag).unwrap();
-    println!("keyload_tag: {}", keyload_tag);
+    println!("Author: keyload_tag");
 
-    //Send Messages
-    let signed_packed_tag_public: String = channel_author
+    //Write signed public message
+    let response_write_signed = channel_author
         .write_signed(
             false,
             PayloadBuilder::new().public(&SensorData::new(1.0))?.build(),
         )
         .unwrap();
+
+    let signed_packed_tag_public = response_write_signed.signed_message_tag;
+    let change_key_tag_public = response_write_signed.change_key_tag;
     println!("Author: Sent signed public message");
 
-    let signed_packed_tag_masked: String = channel_author
+    //Write signed masked message
+    let response_write_signed = channel_author
         .write_signed(
             false,
             PayloadBuilder::new()
@@ -82,8 +85,11 @@ async fn main() -> Fallible<()> {
                 .build(),
         )
         .unwrap();
+    let signed_packed_tag_masked = response_write_signed.signed_message_tag;
+    let change_key_tag_masked = response_write_signed.change_key_tag;
     println!("Author: Sent signed masked message");
 
+    //Write tagged message
     let tagged_packed_tag: String = channel_author
         .write_tagged(
             PayloadBuilder::new()
@@ -103,7 +109,7 @@ async fn main() -> Fallible<()> {
 
     //Read all signed messages
     let list_signed_public: Vec<(Option<SensorData>, Option<SensorData>)> = channel_subscriber
-        .read_signed(signed_packed_tag_public)
+        .read_signed(signed_packed_tag_public, change_key_tag_public)
         .unwrap();
     println!("Subscriber: Reading signed public messages");
     for msg in list_signed_public.iter() {
@@ -115,7 +121,7 @@ async fn main() -> Fallible<()> {
     }
 
     let list_signed_masked: Vec<(Option<SensorData>, Option<SensorData>)> = channel_subscriber
-        .read_signed(signed_packed_tag_masked)
+        .read_signed(signed_packed_tag_masked, change_key_tag_masked)
         .unwrap();
     println!("Subscriber: Reading signed masked messages");
     for msg in list_signed_masked.iter() {
@@ -138,10 +144,16 @@ async fn main() -> Fallible<()> {
         )
     }
 
+    //Give messages some time to propagate
+    println!("Waiting for propagation... ({}s)", delay_time);
+    thread::sleep(Duration::from_secs(delay_time));
+
+    // channel_subscriber.update_keyload(change_key_tag).unwrap();
+    // println!("Subscriber: Updated key for channel");
+
     //Disconnect from channel
     let unsubscribe_tag = channel_subscriber.disconnect().unwrap();
     println!("Subscriber: Disconnected from channel");
-    println!("unsubscribe_tag: {}", unsubscribe_tag);
 
     //Give messages some time to propagate
     println!("Waiting for propagation... ({}s)", delay_time);

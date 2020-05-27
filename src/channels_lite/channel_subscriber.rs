@@ -1,5 +1,5 @@
 #![cfg_attr(debug_assertions, allow(dead_code, unused_imports))]
-use crate::channels::payload::json::Payload;
+use crate::utils::payload::json::Payload;
 use failure::Fallible;
 use iota_lib_rs::prelude::iota_client;
 use iota_streams::app::transport::tangle::client::SendTrytesOptions;
@@ -104,10 +104,15 @@ impl Channel {
     pub fn read_signed<T>(
         &mut self,
         signed_packet_tag: String,
+        change_key_tag: Option<String>,
     ) -> Fallible<Vec<(Option<T>, Option<T>)>>
     where
         T: DeserializeOwned,
     {
+        if change_key_tag.is_some() {
+            self.update_change_key(change_key_tag.unwrap()).unwrap();
+        }
+
         let mut response: Vec<(Option<T>, Option<T>)> = Vec::new();
 
         if self.is_connected {
@@ -208,6 +213,59 @@ impl Channel {
                     Some(header) => {
                         if header.check_content_type(message::keyload::TYPE) {
                             match self.subscriber.unwrap_keyload(header.clone()) {
+                                Ok(_) => {
+                                    break;
+                                }
+                                Err(e) => println!("Keyload Packet Error: {}", e),
+                            }
+                        } else if header.check_content_type(message::change_key::TYPE) {
+                            match self.subscriber.unwrap_change_key(header.clone()) {
+                                Ok(_) => {
+                                    break;
+                                }
+                                Err(e) => println!("Change Key Packet Error: {}", e),
+                            }
+                        } else {
+                            println!(
+                                "Expected a keyload message, found {}",
+                                header.content_type()
+                            );
+                        }
+                    }
+                }
+            }
+        } else {
+            println!("Channel not connected");
+        }
+
+        Ok(())
+    }
+
+    ///
+    /// Update the change key
+    ///
+    pub fn update_change_key(&mut self, change_key_tag: String) -> Fallible<()> {
+        let keyload_link = Address::from_str(&self.channel_address, &change_key_tag).unwrap();
+
+        if self.is_connected {
+            let message_list = self
+                .client
+                .recv_messages_with_options(&keyload_link, ())
+                .unwrap();
+
+            for tx in message_list.iter() {
+                let preparsed = match tx.parse_header() {
+                    Ok(val) => Some(val),
+                    Err(e) => {
+                        println!("Parsing Error Header: {}", e);
+                        None
+                    }
+                };
+                match preparsed {
+                    None => println!("Invalid message"),
+                    Some(header) => {
+                        if header.check_content_type(message::change_key::TYPE) {
+                            match self.subscriber.unwrap_change_key(header.clone()) {
                                 Ok(_) => {
                                     break;
                                 }
