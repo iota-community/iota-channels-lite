@@ -57,7 +57,7 @@ impl Channel {
     ///
     /// Open a channel
     ///
-    pub fn open(&mut self) -> Result<(String, String), &str> {
+    pub fn open(&mut self) -> Fallible<(String, String)> {
         let announcement_message = self.author.announce().unwrap();
         self.client
             .send_message_with_options(&announcement_message, self.send_opt)
@@ -74,7 +74,7 @@ impl Channel {
     ///
     /// Add subscriber
     ///
-    pub fn add_subscriber(&mut self, subscribe_tag: String) -> Result<String, &str> {
+    pub fn add_subscriber(&mut self, subscribe_tag: String) -> Fallible<String> {
         let subscribe_link = Address::from_str(&self.channel_address, &subscribe_tag).unwrap();
 
         let message_list = self
@@ -119,7 +119,7 @@ impl Channel {
     ///
     /// Write signed packet
     ///
-    pub fn write_signed<T>(&mut self, masked: bool, payload: T) -> Result<ResponseSigned, &str>
+    pub fn write_signed<T>(&mut self, masked: bool, payload: T) -> Fallible<ResponseSigned>
     where
         T: PacketPayload,
     {
@@ -166,7 +166,7 @@ impl Channel {
     ///
     /// Write tagged packet
     ///
-    pub fn write_tagged<T>(&mut self, payload: T) -> Result<String, &str>
+    pub fn write_tagged<T>(&mut self, payload: T) -> Fallible<String>
     where
         T: PacketPayload,
     {

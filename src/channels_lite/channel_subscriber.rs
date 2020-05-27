@@ -55,7 +55,7 @@ impl Channel {
     ///
     /// Connect
     ///
-    pub fn connect(&mut self) -> Result<String, &str> {
+    pub fn connect(&mut self) -> Fallible<String> {
         let message_list = self
             .client
             .recv_messages_with_options(&self.announcement_link, ())
@@ -101,7 +101,7 @@ impl Channel {
     ///
     /// Disconnect
     ///
-    pub fn disconnect(&mut self) -> Result<String, &str> {
+    pub fn disconnect(&mut self) -> Fallible<String> {
         let unsubscribe_link = {
             let msg = self
                 .subscriber
