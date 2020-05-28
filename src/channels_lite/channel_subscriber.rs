@@ -30,10 +30,10 @@ impl Channel {
     /// Initialize the subscriber
     ///
     pub fn new(
-        seed_option: Option<String>,
         node_url: &'static str,
         channel_address: String,
         announcement_tag: String,
+        seed_option: Option<String>,
     ) -> Channel {
         let seed = match seed_option {
             Some(seed) => seed,

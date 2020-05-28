@@ -38,7 +38,7 @@ async fn main() -> Fallible<()> {
     let delay_time: u64 = 40;
 
     //Create Channel Instance for author
-    let mut channel_author = channel_author::Channel::new(seed_author, node);
+    let mut channel_author = channel_author::Channel::new(node, seed_author);
 
     //Open Channel
     let (channel_address, announcement_tag) = channel_author.open().unwrap();
@@ -50,7 +50,7 @@ async fn main() -> Fallible<()> {
 
     //Create Channel Instance for subscriber
     let mut channel_subscriber =
-        channel_subscriber::Channel::new(seed_subscriber, node, channel_address, announcement_tag);
+        channel_subscriber::Channel::new(node, channel_address, announcement_tag, seed_subscriber);
 
     //Connect to channel
     let subscription_tag = channel_subscriber.connect().unwrap();

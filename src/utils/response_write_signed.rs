@@ -2,12 +2,12 @@
 //! Response Signed
 //!
 use serde;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 ///
 /// Object returned by write_signed
 ///
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct ResponseSigned {
     /// Signed message tag
     ///
