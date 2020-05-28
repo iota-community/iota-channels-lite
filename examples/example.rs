@@ -30,8 +30,8 @@ impl SensorData {
 
 #[tokio::main]
 async fn main() -> Fallible<()> {
-    let seed_author = "SOME9AUTHOR9SEED9SECRTE9UKOL";
-    let seed_subscriber = "SOME9SUBSCRIBER9SEETKEW";
+    let seed_author = None;
+    let seed_subscriber = Some("SOME9SUBSCRIBER9SEETKEW".to_string());
 
     let node: &'static str = "https://nodes.devnet.iota.org:443";
 
@@ -147,9 +147,6 @@ async fn main() -> Fallible<()> {
     //Give messages some time to propagate
     println!("Waiting for propagation... ({}s)", delay_time);
     thread::sleep(Duration::from_secs(delay_time));
-
-    // channel_subscriber.update_keyload(change_key_tag).unwrap();
-    // println!("Subscriber: Updated key for channel");
 
     //Disconnect from channel
     let unsubscribe_tag = channel_subscriber.disconnect().unwrap();

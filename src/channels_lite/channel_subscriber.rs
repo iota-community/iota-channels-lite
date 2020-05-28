@@ -1,7 +1,7 @@
 //!
 //! Channel Subscriber
 //!
-use crate::utils::payload::json::Payload;
+use crate::utils::{payload::json::Payload, random_seed};
 use failure::Fallible;
 use iota_lib_rs::prelude::iota_client;
 use iota_streams::app::transport::tangle::client::SendTrytesOptions;
@@ -30,12 +30,16 @@ impl Channel {
     /// Initialize the subscriber
     ///
     pub fn new(
-        seed: &str,
+        seed_option: Option<String>,
         node_url: &'static str,
         channel_address: String,
         announcement_tag: String,
     ) -> Channel {
-        let subscriber = Subscriber::new(seed, true);
+        let seed = match seed_option {
+            Some(seed) => seed,
+            None => random_seed::new(),
+        };
+        let subscriber = Subscriber::new(&seed, true);
 
         let mut options = SendTrytesOptions::default();
         options.min_weight_magnitude = 9;

@@ -1,8 +1,7 @@
 //!
 //! Channel author
 //!
-use crate::utils::payload::PacketPayload;
-use crate::utils::response_write_signed::ResponseSigned;
+use crate::utils::{payload::PacketPayload, random_seed, response_write_signed::ResponseSigned};
 use failure::Fallible;
 use iota_lib_rs::prelude::iota_client;
 use iota_streams::app::transport::tangle::client::SendTrytesOptions;
@@ -32,9 +31,13 @@ impl Channel {
     ///
     /// Initialize the Channel
     ///
-    pub fn new<'a>(seed: &str, node_url: &'static str) -> Channel {
+    pub fn new<'a>(seed_option: Option<String>, node_url: &'static str) -> Channel {
+        let seed = match seed_option {
+            Some(seed) => seed,
+            None => random_seed::new(),
+        };
         let mss_height = 3_u32;
-        let author = Author::new(seed, mss_height as usize, true);
+        let author = Author::new(&seed, mss_height as usize, true);
 
         let channel_address = author.channel_address().to_string();
 
