@@ -1,3 +1,6 @@
+//!
+//! Response Signed
+//!
 use serde;
 use serde::Serialize;
 
@@ -6,6 +9,10 @@ use serde::Serialize;
 ///
 #[derive(Serialize)]
 pub struct ResponseSigned {
+    /// Signed message tag
+    ///
     pub signed_message_tag: String,
+    /// Change key tag
+    ///
     pub change_key_tag: Option<String>,
 }

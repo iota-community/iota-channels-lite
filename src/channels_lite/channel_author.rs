@@ -1,5 +1,6 @@
-#![cfg_attr(debug_assertions, allow(dead_code, unused_imports))]
-
+//!
+//! Channel author
+//!
 use crate::utils::payload::PacketPayload;
 use crate::utils::response_write_signed::ResponseSigned;
 use failure::Fallible;
@@ -12,6 +13,9 @@ use iota_streams::app_channels::{
 };
 use std::string::ToString;
 
+///
+/// Channel
+///
 pub struct Channel {
     author: Author,
     client: iota_client::Client<'static>,
@@ -25,7 +29,10 @@ pub struct Channel {
 }
 
 impl Channel {
-    pub fn new(seed: &str, node_ulr: &'static str) -> Channel {
+    ///
+    /// Initialize the Channel
+    ///
+    pub fn new<'a>(seed: &str, node_url: &'static str) -> Channel {
         let mss_height = 3_u32;
         let author = Author::new(seed, mss_height as usize, true);
 
@@ -37,7 +44,7 @@ impl Channel {
 
         Self {
             author: author,
-            client: iota_client::Client::new(node_ulr),
+            client: iota_client::Client::new(node_url),
             send_opt: send_opt,
             channel_address: channel_address,
             announcement_link: Address::default(),
@@ -47,7 +54,10 @@ impl Channel {
         }
     }
 
-    pub fn open(&mut self) -> Result<(String, String), &str> {
+    ///
+    /// Open a channel
+    ///
+    pub fn open(&mut self) -> Fallible<(String, String)> {
         let announcement_message = self.author.announce().unwrap();
         self.client
             .send_message_with_options(&announcement_message, self.send_opt)
@@ -61,7 +71,10 @@ impl Channel {
         Ok((self.channel_address.clone(), announcement_tag))
     }
 
-    pub fn add_subscriber(&mut self, subscribe_tag: String) -> Result<String, &str> {
+    ///
+    /// Add subscriber
+    ///
+    pub fn add_subscriber(&mut self, subscribe_tag: String) -> Fallible<String> {
         let subscribe_link = Address::from_str(&self.channel_address, &subscribe_tag).unwrap();
 
         let message_list = self
@@ -103,7 +116,10 @@ impl Channel {
         Ok(self.keyload_tag.clone())
     }
 
-    pub fn write_signed<T>(&mut self, masked: bool, payload: T) -> Result<ResponseSigned, &str>
+    ///
+    /// Write signed packet
+    ///
+    pub fn write_signed<T>(&mut self, masked: bool, payload: T) -> Fallible<ResponseSigned>
     where
         T: PacketPayload,
     {
@@ -147,7 +163,10 @@ impl Channel {
         })
     }
 
-    pub fn write_tagged<T>(&mut self, payload: T) -> Result<String, &str>
+    ///
+    /// Write tagged packet
+    ///
+    pub fn write_tagged<T>(&mut self, payload: T) -> Fallible<String>
     where
         T: PacketPayload,
     {
@@ -171,6 +190,9 @@ impl Channel {
         Ok(tagged_packet_link.msgid.to_string())
     }
 
+    ///
+    /// Remove subscriber
+    ///
     pub fn remove_subscriber(&mut self, unsubscribe_tag: String) -> Fallible<()> {
         let unsubscribe_link = Address::from_str(&self.channel_address, &unsubscribe_tag).unwrap();
 
