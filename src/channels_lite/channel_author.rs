@@ -31,7 +31,7 @@ impl Channel {
     ///
     /// Initialize the Channel
     ///
-    pub fn new<'a>(seed_option: Option<String>, node_url: &'static str) -> Channel {
+    pub fn new<'a>(node_url: &'static str, seed_option: Option<String>) -> Channel {
         let seed = match seed_option {
             Some(seed) => seed,
             None => random_seed::new(),
