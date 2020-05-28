@@ -1,4 +1,4 @@
-use channels_lite::channels::{channel_author, channel_subscriber};
+use channels_lite::channels::{channel_author, channel_subscriber, Network};
 use channels_lite::utils::payload::json::PayloadBuilder;
 use failure::Fallible;
 use serde::{Deserialize, Serialize};
@@ -32,13 +32,10 @@ impl SensorData {
 async fn main() -> Fallible<()> {
     let seed_author = None;
     let seed_subscriber = Some("SOME9SUBSCRIBER9SEETKEW".to_string());
-
-    let node: &'static str = "https://nodes.devnet.iota.org:443";
-
     let delay_time: u64 = 40;
 
     //Create Channel Instance for author
-    let mut channel_author = channel_author::Channel::new(node, seed_author);
+    let mut channel_author = channel_author::Channel::new(Network::Devnet, seed_author);
 
     //Open Channel
     let (channel_address, announcement_tag) = channel_author.open().unwrap();
@@ -49,8 +46,12 @@ async fn main() -> Fallible<()> {
     thread::sleep(Duration::from_secs(delay_time));
 
     //Create Channel Instance for subscriber
-    let mut channel_subscriber =
-        channel_subscriber::Channel::new(node, channel_address, announcement_tag, seed_subscriber);
+    let mut channel_subscriber = channel_subscriber::Channel::new(
+        Network::Devnet,
+        channel_address,
+        announcement_tag,
+        seed_subscriber,
+    );
 
     //Connect to channel
     let subscription_tag = channel_subscriber.connect().unwrap();

@@ -1,6 +1,7 @@
 //!
 //! Channel author
 //!
+use super::Network;
 use crate::utils::{payload::PacketPayload, random_seed, response_write_signed::ResponseSigned};
 use failure::Fallible;
 use iota_lib_rs::prelude::iota_client;
@@ -31,7 +32,7 @@ impl Channel {
     ///
     /// Initialize the Channel
     ///
-    pub fn new<'a>(node_url: &'static str, seed_option: Option<String>) -> Channel {
+    pub fn new(node: Network, seed_option: Option<String>) -> Channel {
         let seed = match seed_option {
             Some(seed) => seed,
             None => random_seed::new(),
@@ -41,14 +42,10 @@ impl Channel {
 
         let channel_address = author.channel_address().to_string();
 
-        let mut send_opt = SendTrytesOptions::default();
-        send_opt.min_weight_magnitude = 9;
-        send_opt.local_pow = false;
-
         Self {
             author: author,
-            client: iota_client::Client::new(node_url),
-            send_opt: send_opt,
+            client: iota_client::Client::new(node.as_string()),
+            send_opt: node.send_options(),
             channel_address: channel_address,
             announcement_link: Address::default(),
             keyload_tag: String::default(),
