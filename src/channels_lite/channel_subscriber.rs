@@ -59,35 +59,22 @@ impl Channel {
     pub fn connect(&mut self) -> Fallible<String> {
         let message_list = self
             .client
-            .recv_messages_with_options(&self.announcement_link, ())
-            .unwrap();
+            .recv_messages_with_options(&self.announcement_link, ())?;
 
         let mut found_valid_msg = false;
+
         for tx in message_list.iter() {
-            match tx.parse_header() {
-                Ok(header) => {
-                    if header.check_content_type(message::announce::TYPE) {
-                        self.subscriber.unwrap_announcement(header.clone()).unwrap();
-                        found_valid_msg = true;
-                        break;
-                    } else {
-                        println!(
-                            "Expected an announce message, found {}",
-                            header.content_type()
-                        );
-                    }
-                }
-                Err(e) => {
-                    println!("Parsing Error Header: {}", e);
-                }
-            };
+            let header = tx.parse_header()?;
+            if header.check_content_type(message::announce::TYPE) {
+                self.subscriber.unwrap_announcement(header.clone())?;
+                found_valid_msg = true;
+                break;
+            }
         }
         if found_valid_msg {
             let subscribe_link = {
-                let msg = self.subscriber.subscribe(&self.announcement_link).unwrap();
-                self.client
-                    .send_message_with_options(&msg, self.send_opt)
-                    .unwrap();
+                let msg = self.subscriber.subscribe(&self.announcement_link)?;
+                self.client.send_message_with_options(&msg, self.send_opt)?;
                 msg.link.clone()
             };
 
@@ -104,13 +91,8 @@ impl Channel {
     ///
     pub fn disconnect(&mut self) -> Fallible<String> {
         let unsubscribe_link = {
-            let msg = self
-                .subscriber
-                .unsubscribe(&self.subscription_link)
-                .unwrap();
-            self.client
-                .send_message_with_options(&msg, self.send_opt)
-                .unwrap();
+            let msg = self.subscriber.unsubscribe(&self.subscription_link)?;
+            self.client.send_message_with_options(&msg, self.send_opt)?;
             msg.link.msgid
         };
         Ok(unsubscribe_link.to_string())
@@ -128,36 +110,28 @@ impl Channel {
         T: DeserializeOwned,
     {
         if change_key_tag.is_some() {
-            self.update_change_key(change_key_tag.unwrap()).unwrap();
+            self.update_change_key(change_key_tag.unwrap())?;
         }
 
         let mut response: Vec<(Option<T>, Option<T>)> = Vec::new();
 
         if self.is_connected {
             let link = Address::from_str(&self.channel_address, &signed_packet_tag).unwrap();
+            let message_list = self.client.recv_messages_with_options(&link, ())?;
 
-            let message_list = self.client.recv_messages_with_options(&link, ()).unwrap();
             for tx in message_list.iter() {
-                match tx.parse_header() {
-                    Ok(header) => {
-                        if header.check_content_type(message::signed_packet::TYPE) {
-                            match self.subscriber.unwrap_signed_packet(header.clone()) {
-                                Ok((unwrapped_public, unwrapped_masked)) => {
-                                    response.push((
-                                        Payload::unwrap_data(&unwrapped_public)?,
-                                        Payload::unwrap_data(&unwrapped_masked)?,
-                                    ));
-                                }
-                                Err(e) => println!("Signed Packet Error: {}", e),
-                            }
-                        } else {
-                            println!("Expected a signed message, found {}", header.content_type());
+                let header = tx.parse_header()?;
+                if header.check_content_type(message::signed_packet::TYPE) {
+                    match self.subscriber.unwrap_signed_packet(header.clone()) {
+                        Ok((unwrapped_public, unwrapped_masked)) => {
+                            response.push((
+                                Payload::unwrap_data(&unwrapped_public)?,
+                                Payload::unwrap_data(&unwrapped_masked)?,
+                            ));
                         }
+                        Err(e) => println!("Signed Packet Error: {}", e),
                     }
-                    Err(e) => {
-                        println!("Parsing Error Header: {}", e);
-                    }
-                };
+                }
             }
         } else {
             println!("Channel not connected");
@@ -181,29 +155,21 @@ impl Channel {
         if self.is_connected {
             let link = Address::from_str(&self.channel_address, &tagged_packet_tag).unwrap();
 
-            let message_list = self.client.recv_messages_with_options(&link, ()).unwrap();
+            let message_list = self.client.recv_messages_with_options(&link, ())?;
 
             for tx in message_list.iter() {
-                match tx.parse_header() {
-                    Ok(header) => {
-                        if header.check_content_type(message::tagged_packet::TYPE) {
-                            match self.subscriber.unwrap_tagged_packet(header.clone()) {
-                                Ok((unwrapped_public, unwrapped_masked)) => {
-                                    response.push((
-                                        Payload::unwrap_data(&unwrapped_public)?,
-                                        Payload::unwrap_data(&unwrapped_masked)?,
-                                    ));
-                                }
-                                Err(e) => println!("Tagged Packet Error: {}", e),
-                            }
-                        } else {
-                            println!("Expected a tagged message, found {}", header.content_type());
+                let header = tx.parse_header()?;
+                if header.check_content_type(message::tagged_packet::TYPE) {
+                    match self.subscriber.unwrap_tagged_packet(header.clone()) {
+                        Ok((unwrapped_public, unwrapped_masked)) => {
+                            response.push((
+                                Payload::unwrap_data(&unwrapped_public)?,
+                                Payload::unwrap_data(&unwrapped_masked)?,
+                            ));
                         }
+                        Err(e) => println!("Tagged Packet Error: {}", e),
                     }
-                    Err(e) => {
-                        println!("Parsing Error Header: {}", e);
-                    }
-                };
+                }
             }
         } else {
             println!("Channel not connected");
@@ -219,47 +185,31 @@ impl Channel {
         let keyload_link = Address::from_str(&self.channel_address, &keyload_tag).unwrap();
 
         if self.is_connected {
-            let message_list = self
-                .client
-                .recv_messages_with_options(&keyload_link, ())
-                .unwrap();
+            let message_list = self.client.recv_messages_with_options(&keyload_link, ())?;
 
             for tx in message_list.iter() {
-                let preparsed = match tx.parse_header() {
-                    Ok(val) => Some(val),
-                    Err(e) => {
-                        println!("Parsing Error Header: {}", e);
-                        None
-                    }
-                };
-                match preparsed {
-                    None => println!("Invalid message"),
-                    Some(header) => {
-                        if header.check_content_type(message::keyload::TYPE) {
-                            match self.subscriber.unwrap_keyload(header.clone()) {
-                                Ok(_) => {
-                                    break;
-                                }
-                                Err(e) => println!("Keyload Packet Error: {}", e),
-                            }
-                        } else if header.check_content_type(message::change_key::TYPE) {
-                            match self.subscriber.unwrap_change_key(header.clone()) {
-                                Ok(_) => {
-                                    break;
-                                }
-                                Err(e) => println!("Change Key Packet Error: {}", e),
-                            }
-                        } else {
-                            println!(
-                                "Expected a keyload message, found {}",
-                                header.content_type()
-                            );
+                let header = tx.parse_header()?;
+                if header.check_content_type(message::keyload::TYPE) {
+                    match self.subscriber.unwrap_keyload(header.clone()) {
+                        Ok(_) => {
+                            break;
                         }
+                        Err(e) => println!("Keyload Packet Error: {}", e),
                     }
+                } else if header.check_content_type(message::change_key::TYPE) {
+                    match self.subscriber.unwrap_change_key(header.clone()) {
+                        Ok(_) => {
+                            break;
+                        }
+                        Err(e) => println!("Change Key Packet Error: {}", e),
+                    }
+                } else {
+                    println!(
+                        "Expected a keyload message, found {}",
+                        header.content_type()
+                    );
                 }
             }
-        } else {
-            println!("Channel not connected");
         }
 
         Ok(())
@@ -272,36 +222,21 @@ impl Channel {
         let keyload_link = Address::from_str(&self.channel_address, &change_key_tag).unwrap();
 
         if self.is_connected {
-            let message_list = self
-                .client
-                .recv_messages_with_options(&keyload_link, ())
-                .unwrap();
-
+            let message_list = self.client.recv_messages_with_options(&keyload_link, ())?;
             for tx in message_list.iter() {
-                let preparsed = match tx.parse_header() {
-                    Ok(val) => Some(val),
-                    Err(e) => {
-                        println!("Parsing Error Header: {}", e);
-                        None
-                    }
-                };
-                match preparsed {
-                    None => println!("Invalid message"),
-                    Some(header) => {
-                        if header.check_content_type(message::change_key::TYPE) {
-                            match self.subscriber.unwrap_change_key(header.clone()) {
-                                Ok(_) => {
-                                    break;
-                                }
-                                Err(e) => println!("Keyload Packet Error: {}", e),
-                            }
-                        } else {
-                            println!(
-                                "Expected a keyload message, found {}",
-                                header.content_type()
-                            );
+                let header = tx.parse_header()?;
+                if header.check_content_type(message::change_key::TYPE) {
+                    match self.subscriber.unwrap_change_key(header.clone()) {
+                        Ok(_) => {
+                            break;
                         }
+                        Err(e) => println!("Keyload Packet Error: {}", e),
                     }
+                } else {
+                    println!(
+                        "Expected a keyload message, found {}",
+                        header.content_type()
+                    );
                 }
             }
         } else {

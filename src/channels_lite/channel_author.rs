@@ -60,8 +60,7 @@ impl Channel {
     pub fn open(&mut self) -> Fallible<(String, String)> {
         let announcement_message = self.author.announce().unwrap();
         self.client
-            .send_message_with_options(&announcement_message, self.send_opt)
-            .unwrap();
+            .send_message_with_options(&announcement_message, self.send_opt)?;
         let announcement_address: String = announcement_message.link.appinst.to_string();
         let announcement_tag: String = announcement_message.link.msgid.to_string();
 
@@ -79,37 +78,22 @@ impl Channel {
 
         let message_list = self
             .client
-            .recv_messages_with_options(&subscribe_link, ())
-            .unwrap();
+            .recv_messages_with_options(&subscribe_link, ())?;
         for tx in message_list.iter() {
-            match tx.parse_header() {
-                Ok(header) => {
-                    if header.check_content_type(message::subscribe::TYPE) {
-                        match self.author.unwrap_subscribe(header.clone()) {
-                            Ok(_) => {
-                                break;
-                            }
-                            Err(e) => println!("Subscribe Packet Error: {}", e),
-                        }
-                    } else {
-                        println!(
-                            "Expected a subscription message, found {}",
-                            header.content_type()
-                        );
+            let header = tx.parse_header()?;
+            if header.check_content_type(message::subscribe::TYPE) {
+                match self.author.unwrap_subscribe(header.clone()) {
+                    Ok(_) => {
+                        break;
                     }
+                    Err(e) => println!("Subscribe Packet Error: {}", e),
                 }
-                Err(e) => println!("Parsing Error Header: {}", e),
             }
         }
 
         self.keyload_tag = {
-            let msg = self
-                .author
-                .share_keyload_for_everyone(&subscribe_link)
-                .unwrap();
-            self.client
-                .send_message_with_options(&msg, self.send_opt)
-                .unwrap();
+            let msg = self.author.share_keyload_for_everyone(&subscribe_link)?;
+            self.client.send_message_with_options(&msg, self.send_opt)?;
             msg.link.msgid.to_string()
         };
 
@@ -123,36 +107,24 @@ impl Channel {
     where
         T: PacketPayload,
     {
-        let change_key_tag = self.try_change_key(false).unwrap();
-
+        let change_key_tag = self.try_change_key(false)?;
         let keyload_link = Address::from_str(&self.channel_address, &self.keyload_tag).unwrap();
-
         let signed_packet_link = {
             if masked {
-                let msg = self
-                    .author
-                    .sign_packet(
-                        &keyload_link,
-                        &payload.public_data(),
-                        &payload.masked_data(),
-                    )
-                    .unwrap();
-                self.client
-                    .send_message_with_options(&msg, self.send_opt)
-                    .unwrap();
+                let msg = self.author.sign_packet(
+                    &keyload_link,
+                    &payload.public_data(),
+                    &payload.masked_data(),
+                )?;
+                self.client.send_message_with_options(&msg, self.send_opt)?;
                 msg.link.clone()
             } else {
-                let msg = self
-                    .author
-                    .sign_packet(
-                        &self.announcement_link,
-                        &payload.public_data(),
-                        &payload.masked_data(),
-                    )
-                    .unwrap();
-                self.client
-                    .send_message_with_options(&msg, self.send_opt)
-                    .unwrap();
+                let msg = self.author.sign_packet(
+                    &self.announcement_link,
+                    &payload.public_data(),
+                    &payload.masked_data(),
+                )?;
+                self.client.send_message_with_options(&msg, self.send_opt)?;
                 msg.link.clone()
             }
         };
@@ -173,17 +145,12 @@ impl Channel {
         let keyload_link = Address::from_str(&self.channel_address, &self.keyload_tag).unwrap();
 
         let tagged_packet_link = {
-            let msg = self
-                .author
-                .tag_packet(
-                    &keyload_link,
-                    &payload.public_data(),
-                    &payload.masked_data(),
-                )
-                .unwrap();
-            self.client
-                .send_message_with_options(&msg, self.send_opt)
-                .unwrap();
+            let msg = self.author.tag_packet(
+                &keyload_link,
+                &payload.public_data(),
+                &payload.masked_data(),
+            )?;
+            self.client.send_message_with_options(&msg, self.send_opt)?;
             msg.link.clone()
         };
 
@@ -198,29 +165,17 @@ impl Channel {
 
         let message_list = self
             .client
-            .recv_messages_with_options(&unsubscribe_link, ())
-            .unwrap();
+            .recv_messages_with_options(&unsubscribe_link, ())?;
         for tx in message_list.iter() {
-            match tx.parse_header() {
-                Ok(header) => {
-                    if header.check_content_type(message::unsubscribe::TYPE) {
-                        match self.author.unwrap_unsubscribe(header.clone()) {
-                            Ok(_) => {
-                                break;
-                            }
-                            Err(e) => println!("Unsubscribe Packet Error: {}", e),
-                        }
-                    } else {
-                        println!(
-                            "Expected a unsubscription message, found {}",
-                            header.content_type()
-                        );
+            let header = tx.parse_header()?;
+            if header.check_content_type(message::unsubscribe::TYPE) {
+                match self.author.unwrap_unsubscribe(header.clone()) {
+                    Ok(_) => {
+                        break;
                     }
+                    Err(e) => println!("Unsubscribe Packet Error: {}", e),
                 }
-                Err(e) => {
-                    println!("Parsing Error Header: {}", e);
-                }
-            };
+            }
         }
         Ok(())
     }
