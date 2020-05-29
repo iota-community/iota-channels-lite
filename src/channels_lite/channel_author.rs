@@ -108,9 +108,10 @@ impl Channel {
         T: PacketPayload,
     {
         let change_key_tag = self.try_change_key(false)?;
-        let keyload_link = Address::from_str(&self.channel_address, &self.keyload_tag).unwrap();
         let signed_packet_link = {
             if masked {
+                let keyload_link =
+                    Address::from_str(&self.channel_address, &self.keyload_tag).unwrap();
                 let msg = self.author.sign_packet(
                     &keyload_link,
                     &payload.public_data(),
