@@ -110,6 +110,9 @@ impl Channel {
         let change_key_tag = self.try_change_key(false)?;
         let signed_packet_link = {
             if masked {
+                if self.keyload_tag.clone() == String::default() {
+                    panic!("Can not send masked message before a keyload is generated and shared")
+                }
                 let keyload_link =
                     Address::from_str(&self.channel_address, &self.keyload_tag).unwrap();
                 let msg = self.author.sign_packet(
