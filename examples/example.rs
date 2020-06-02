@@ -1,4 +1,4 @@
-use channels_lite::channels::{channel_author, channel_subscriber};
+use channels_lite::channels::{channel_author, channel_subscriber, Network};
 use channels_lite::utils::payload::json::PayloadBuilder;
 use failure::Fallible;
 use serde::{Deserialize, Serialize};
@@ -30,15 +30,12 @@ impl SensorData {
 
 #[tokio::main]
 async fn main() -> Fallible<()> {
-    let seed_author = "SOME9AUTHOR9SEED9SECRTE9UKOL";
-    let seed_subscriber = "SOME9SUBSCRIBER9SEETKEW";
-
-    let node: &'static str = "https://nodes.devnet.iota.org:443";
-
+    let seed_author = None;
+    let seed_subscriber = Some("SOME9SUBSCRIBER9SEETKEW".to_string());
     let delay_time: u64 = 40;
 
     //Create Channel Instance for author
-    let mut channel_author = channel_author::Channel::new(seed_author, node);
+    let mut channel_author = channel_author::Channel::new(Network::Devnet, seed_author);
 
     //Open Channel
     let (channel_address, announcement_tag) = channel_author.open().unwrap();
@@ -49,8 +46,12 @@ async fn main() -> Fallible<()> {
     thread::sleep(Duration::from_secs(delay_time));
 
     //Create Channel Instance for subscriber
-    let mut channel_subscriber =
-        channel_subscriber::Channel::new(seed_subscriber, node, channel_address, announcement_tag);
+    let mut channel_subscriber = channel_subscriber::Channel::new(
+        Network::Devnet,
+        channel_address,
+        announcement_tag,
+        seed_subscriber,
+    );
 
     //Connect to channel
     let subscription_tag = channel_subscriber.connect().unwrap();
@@ -147,9 +148,6 @@ async fn main() -> Fallible<()> {
     //Give messages some time to propagate
     println!("Waiting for propagation... ({}s)", delay_time);
     thread::sleep(Duration::from_secs(delay_time));
-
-    // channel_subscriber.update_keyload(change_key_tag).unwrap();
-    // println!("Subscriber: Updated key for channel");
 
     //Disconnect from channel
     let unsubscribe_tag = channel_subscriber.disconnect().unwrap();
