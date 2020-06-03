@@ -25,7 +25,7 @@ Use `channel_subscriber.disconnect()` to disconnect from a channel<br />
 
 # Try it yourself
 Clone the repo:<br />
-`git clone https://github.com/AleBuser/iota-channels-lite`<br />
+`git clone https://github.com/iota-community/iota-channels-lite`<br />
 Enter into the folder:<br />
 `cd iota-channels-lite`<br />
 Run the example code:<br />
@@ -33,7 +33,7 @@ Run the example code:<br />
 
 # Use it yourself
 Add the dependency to the `Cargo.toml` file: <br />
-`channels_lite = { git= "https://github.com/AleBuser/iota-channels-lite"}`<br />
+`channels_lite = { git= "https://github.com/iota-community/iota-channels-lite"}`<br />
 Import the channels into you code:<br />
 `use channels_lite::channels::channel_author;`<br />
 `use channels_lite::channels::channel_subscriber;`<br />
