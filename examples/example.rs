@@ -63,7 +63,7 @@ async fn main() -> Fallible<()> {
 
     //Add subscriber
     let keyload_tag = channel_author.add_subscriber(subscription_tag).unwrap();
-    println!("Author: keyload_tag");
+    println!("Author: {}", keyload_tag);
 
     //Write signed public message
     let response_write_signed = channel_author
