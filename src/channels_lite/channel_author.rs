@@ -108,7 +108,7 @@ impl Channel {
     {
         let signed_packet_link = {
             if masked {
-                if self.keyload_tag.clone() == String::default() {
+                if self.last_keyload_tag.clone() == String::default() {
                     panic!("Can not send masked message before a keyload is generated and shared")
                 }
                 let keyload_link =
