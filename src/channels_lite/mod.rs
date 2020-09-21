@@ -26,7 +26,7 @@ pub enum Network {
     ///     * Custome url
     ///     * Min weight magnitude
     ///
-    Custom(&'static str, usize),
+    Custom(&'static str, u8),
 }
 
 impl Network {
