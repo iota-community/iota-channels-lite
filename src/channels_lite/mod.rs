@@ -26,7 +26,7 @@ pub enum Network {
     ///     * Custome url
     ///     * Min weight magnitude
     ///
-    Custom(&'static str, usize),
+    Custom(&'static str, u8),
 }
 
 impl Network {
@@ -53,7 +53,7 @@ impl Network {
                 send_opt.local_pow = false;
             }
             Self::Main => {
-                send_opt.min_weight_magnitude = 9;
+                send_opt.min_weight_magnitude = 14;
                 send_opt.local_pow = false;
             }
             Self::Comnet => {
